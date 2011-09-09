@@ -110,7 +110,7 @@ bracket_method = 2 # Method to use for [f,g] terms
                    # 3 = Corner Transport Upwind (CTU)
 
 parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
-nonlinear = false   # Include nonlinear terms?
+nonlinear = true   # Include nonlinear terms?
 
 include_jpar0 = false
 
@@ -152,7 +152,9 @@ bndry_all = neumann
 [Apar]
 
 function = (1 - 4*(x-0.5)^2 )*sin(3*y - z)
-scale = -1.0
+scale = 0.01
+bndry_xin = zerolaplace   # Radial boundaries specified in inversion
+bndry_xout = zerolaplace
 
 ########### Auxilliary variables
 
@@ -166,5 +168,5 @@ bndry_xout = none
 
 [Apar_coil]
 
-function = x*x*sin(3*y - z)
+function = sin(3*y - z)
 scale = 1.e-3

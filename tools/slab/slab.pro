@@ -21,12 +21,19 @@
 ; L_T     = Temperature length scale [m]
 ; eta_i   = Ratio of density to temp. length scales eta = L_n / L_T
 
+FUNCTION psifun, ix
+COMMON psicom, bpxy
+  return, bpxy(ix)
+END
+
 PRO slab, output=output, thin=thin, $
           ni=ni, Ti=Ti, $
           Rmaj=Rmaj, rminor=rminor, dr=dr, $
           r_wid=r_wid, $
           q=q, dq=dq, $
           L_T=L_T, eta_i=eta_i
+
+ COMMON psicom, bpxy 
 
   nx = 68 ; Radial grid points
   ny = 32 ; Poloidal (parallel) grid points
@@ -89,10 +96,14 @@ PRO slab, output=output, thin=thin, $
   
   ; Minor radius offset
   drprof = dr*((FINDGEN(nx) / FLOAT(nx-1)) - 0.5)
+  rprof = rminor+drprof
   ; q profile
   qprof = q + dq*((FINDGEN(nx) / FLOAT(nx-1)) - 0.5)
+  shear = (rminor+drprof)*dq/(qprof*dr)
   ShiftAngle = qprof * 2.*!PI
-  
+  psitor = Bt0*rprof^2/2  
+
+
   IF KEYWORD_SET(thin) THEN BEGIN
      ; Constant Bp, but shift angle varies
      Bpxy = FLTARR(nx, ny) + Bp
@@ -102,6 +113,13 @@ PRO slab, output=output, thin=thin, $
      FOR i=0, ny-1 DO Bpxy[*,i] = Bp * q / qprof
      PRINT, "Poloidal field varies from "+STR(MIN(Bpxy))+" to "+STR(MAX(Bpxy))
   ENDELSE
+;  psipol = 0*psitor
+;  FOR ix=1,nx-1 DO BEGIN
+;    psipol(ix) = psipol(ix-1) + QROMB(psifunc,ix-1,ix)
+;  ENDFOR
+  Bpxy  = Bt0/Rxy * ((rprof/qprof)#(1+fltarr(ny)))
+  psixy = total(Bpxy*Rxy*(drprof#(1+fltarr(ny))),1,/cum)
+  psixy = psixy - (1+fltarr(nx)) # psixy(nx/2,*) 
   
   dx = Bp * (dr / FLOAT(nx-1)) * Rxy
 
@@ -205,11 +223,15 @@ PRO slab, output=output, thin=thin, $
   
   s = file_write(handle, "dx", dx)
   s = file_write(handle, "dy", dy)
-  
+
+  s = file_write(handle, "rprof", rminor+drprof)  
+  s = file_write(handle, "qprof", qprof)  
+  s = file_write(handle, "shear", shear)  
   s = file_write(handle, "ShiftAngle", ShiftAngle)
   s = file_write(handle, "zShift", zShift)
 ;  s = file_write(handle, "pol_angle", pol_angle)
 ;  s = file_write(handle, "ShiftTorsion", dqdpsi)
+  s = file_write(handle, "psitor", psitor)  
 
   s = file_write(handle, "Rxy",  Rxy)
   s = file_write(handle, "Zxy",  Zxy)
@@ -218,7 +240,7 @@ PRO slab, output=output, thin=thin, $
   s = file_write(handle, "Bxy",  Bxy)
   s = file_write(handle, "hthe", hthe)
 ;  s = file_write(handle, "sinty", sinty)
-;  s = file_write(handle, "psixy", psixy)
+  s = file_write(handle, "psixy", psixy)
 
   ; Topology for general configurations
   s = file_write(handle, "yup_xsplit", yup_xsplit)
