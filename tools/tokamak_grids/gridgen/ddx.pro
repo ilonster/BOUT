@@ -5,7 +5,14 @@ FUNCTION ddx, psi, var
   ny = s[1]
 
   dv = DBLARR(nx, ny)
-  FOR i=0, ny-1 DO dv[*,i] = DERIV(psi[*,i], var[*,i])
+  vspl=dv
+  FOR i=0, ny-1 DO BEGIN
+        vspl[*,i] = SPL_INIT(psi[*,i],var[*,i])
+        dv[*,i] = SPLDER(psi[*,i],var[*,i],vspl[*,i])
 
+;        dv[*,i] = DERIV(psi[*,i], var[*,i])
+
+;    dv[*,i] = DERIV(psi[*,i], var[*,i])
+  END
   RETURN, dv
 END

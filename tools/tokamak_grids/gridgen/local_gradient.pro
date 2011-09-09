@@ -64,6 +64,12 @@ PRO local_gradient, interp_data, ri, zi, status=status, $
       dfdr = d[1] + d[3]*dx
       dfdz = d[2] + d[4]*dy
     END
+    2: BEGIN; PSPLINE method
+       res = bcspeval(float(ri),float(zi),findgen(nr),findgen(nz),interp_data.fspl,error=status)
+         f    = res[0]
+         dfdr = res[1]
+         dfdz = res[2]
+    END
     ELSE: BEGIN
       PRINT, "ERROR: unknown method in local_gradient"
       STOP

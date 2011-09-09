@@ -1125,11 +1125,17 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   s = file_write(handle, "dx", dx)
   s = file_write(handle, "dy", dy)
-  
+
+  s = file_write(handle, "q", qloop/2.0/!pi)  
   s = file_write(handle, "ShiftAngle", qloop)
   s = file_write(handle, "zShift", qinty)
   s = file_write(handle, "pol_angle", pol_angle)
   s = file_write(handle, "ShiftTorsion", dqdpsi)
+
+  ; Psi range
+  s = file_write(handle, "psi_axis", mesh.faxis)
+  psi_bndry = mesh.faxis + mesh.fnorm
+  s = file_write(handle, "psi_bndry", psi_bndry)
 
   s = file_write(handle, "Rxy",  Rxy)
   s = file_write(handle, "Zxy",  Zxy)
@@ -1139,6 +1145,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "hthe", hthe)
   s = file_write(handle, "sinty", sinty)
   s = file_write(handle, "psixy", psixy)
+  s = file_write(handle, "psin", (psixy-mesh.faxis)/psi_bndry)
 
   ; Topology for general configurations
   s = file_write(handle, "yup_xsplit", mesh.yup_xsplit)
@@ -1168,10 +1175,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "bxcvy", bxcvy)
   s = file_write(handle, "bxcvz", bxcvz)
 
-  ; Psi range
-  s = file_write(handle, "psi_axis", mesh.faxis)
-  psi_bndry = mesh.faxis + mesh.fnorm
-  s = file_write(handle, "psi_bndry", psi_bndry)
+
 
   file_close, handle
   PRINT, "DONE"

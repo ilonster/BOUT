@@ -591,7 +591,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       boundary=boundary, debug=debug, strictbndry=strictbndry, iter=iter, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
                       nrad_flexible=nrad_flexible, rad_peaking=rad_peaking, $
-                      single_rad_grid=single_rad_grid, fast=fast, $
+                      single_rad_grid=single_rad_grid, interp=interp, $
                       xpt_mindist=xpt_mindist
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
@@ -688,23 +688,48 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ENDELSE
   ENDIF
   
-  ;;;;;;;;;;;;;;; Calculate DCT ;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;; Calculate Function Representation ;;;;;;;;;;;;;;
   
-  IF KEYWORD_SET(fast) THEN BEGIN
-    PRINT, "Using Fast settings"
+  CASE interp OF
+  'SVD': BEGIN
+    PRINT, "Using fast SVD interpolation"
     interp_data = {nx:nx, ny:ny, $
                    method:1, $
                    f: f}  ; Just need the function itself
-  ENDIF ELSE BEGIN
-    dct = DCT2D(F)
-
+  END
+  'svd': BEGIN
+    PRINT, "Using fast SVD interpolation"
+    interp_data = {nx:nx, ny:ny, $
+                   method:1, $
+                   f: f}  ; Just need the function itself
+  END
+  'PSPLINE': BEGIN
+    PRINT, "Using PSPLINE interpolation"
+    fspl = bcspline(findgen(nx),findgen(ny),f) 
+    interp_data = {nx:nx, ny:ny, $
+                   method:2, $
+                   f: f, $     ; Always include function
+                   fspl:fspl}; Pass spline coefficients
+  END
+  'pspline': BEGIN
+    PRINT, "Using PSPLINE interpolation"
+    fspl = bcspline(findgen(nx),findgen(ny),f) 
+    interp_data = {nx:nx, ny:ny, $
+                   method:2, $
+                   f: f, $     ; Always include function
+                   fspl:fspl}; Pass spline coefficients
+  END
+  ELSE: BEGIN
+    PRINT, "Using DCT interpolation"
+    dct = DCT(F)
     ; Create a structure containing interpolation settings and data
     interp_data = {nx:nx, ny:ny, $
                    method:0, $
                    f: F, $       ; Always include function
                    dct: dct} ; Pass the DCT coefficients
-  ENDELSE
-    
+  END
+  ENDCASE
+
   ;;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
 
   nlev = 100
@@ -1196,7 +1221,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
         RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                             boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
-                            rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid, fast=fast)
+                            rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid, interp=interp)
       ENDIF
       dpsi = sol_psi_vals[i,TOTAL(nrad,/int)-nsol-1] - sol_psi_vals[i,TOTAL(nrad,/int)-nsol-2]
       sol_psi_vals[i,(TOTAL(nrad,/int)-nsol):*] = radial_grid(nsol, $
@@ -1775,7 +1800,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                           boundary=boundary, strictbndry=strictbndry, $
                           iter=iter+1, nrad_flexible=nrad_flexible, $
-                          rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid, fast=fast)
+                          rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid, interp=interp)
       
     ENDIF
     
